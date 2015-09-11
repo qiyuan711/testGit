@@ -497,3 +497,544 @@ public class Adventurer {
 		return this.name;
 	}
 }
+
+
+/**
+/ File: Game.java
+/ Author: your name
+/ Id: your id
+/ Version: 1.0 09/10/2015
+/ Description: Assignment 2
+/ This is my own work as defined by the SAIBT / EIBT
+/ Academic Misconduct policy.
+*/
+
+package entity;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Random;
+import java.util.Scanner;
+
+import exceptions.ItemTypeException;
+import items.Item;
+import items.Armour;
+import items.Shield;
+import items.Weapon;
+import items.HealthPotion;
+import items.DamagePotion;
+
+/**
+ * This is an interactive text-based game allowing you to fight enemy
+ * adventurers and equip and use items. 
+ * 
+ * Before the game begins you will need to perform any initialization 
+ * that might be required. In this section, create an adventurer for 
+ * the player. You may choose to equip them with some basic equipment
+ * and items.
+ * 
+ * In the battle subroutine you will need to generate an enemy and
+ * allow the player and enemy to fight each other until one of them
+ * is defeated.
+ * 
+ * In the findItems subroutine you will present the player with some 
+ * items to add to their inventory. In this subroutine, they may
+ * add items, equip items, drop items or choose to battle the next
+ * enemy.
+ * 
+ * When the player is defeated display game over and end the game. 
+ * 
+ * <strong>Date:</strong> 
+ * <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10/8/2015</p>
+ * 
+ * @version 1.2
+ */
+public class Game {
+
+	Adventurer player;
+	Adventurer enemy;
+	Scanner keyboard;
+	Random random;
+	
+	private Adventurer firstToMove;
+	private int inventoryStatus;
+	private static ArrayList<Item> arsenal;
+	
+	static{
+		arsenal = new ArrayList<Item>();
+		
+		Armour leatherTunic = new Armour("Leather Tunic", 5, 10);
+		Armour scaleMail = new Armour("Scale Mail", 10, 20);
+		Armour breastPlate = new Armour("Breast Plate", 15, 25);
+		Armour plateMail = new Armour("Plate Mail", 20, 30);
+		Armour gothicPlate = new Armour("Gothic Plate", 25, 40);
+		Armour ancientArmour = new Armour("Ancient Armour", 30, 45);
+		
+		arsenal.add(leatherTunic);
+		arsenal.add(scaleMail);
+		arsenal.add(breastPlate);
+		arsenal.add(plateMail);
+		arsenal.add(gothicPlate);
+		arsenal.add(ancientArmour);
+		
+		Shield buckler = new Shield("Buckler", 5, 5, 0);
+		Shield largeShield = new Shield("Large Shield", 10, 10, 0.1f);
+		Shield monarch = new Shield("Monarch", 15, 15, 0.15f);
+		Shield bladeBarrier = new Shield("Blade Barrier", 20, 15, 0.15f);
+		Shield aegis = new Shield("Aegis", 25, 30, 0.2f);
+		Shield ward = new Shield("Ward", 30, 45, 0.3f);
+		
+		arsenal.add(buckler);
+		arsenal.add(largeShield);
+		arsenal.add(monarch);
+		arsenal.add(bladeBarrier);
+		arsenal.add(aegis);
+		arsenal.add(ward);
+
+		Weapon dagger = new Weapon("Dagger", 30, 5);
+		Weapon axe = new Weapon("Axe", 50, 15);
+		Weapon mace = new Weapon("Mace", 60, 15);
+		Weapon spear = new Weapon("Spear", 80, 10);
+		Weapon sword = new Weapon("Sword", 100, 20);
+		Weapon revolver = new Weapon("Revolver", 200, 10);
+		
+		arsenal.add(dagger);
+		arsenal.add(axe);
+		arsenal.add(mace);
+		arsenal.add(spear);
+		arsenal.add(sword);
+		arsenal.add(revolver);
+		
+		HealthPotion healthPotion = new HealthPotion("Healing Potion");
+		DamagePotion damagePotion = new DamagePotion("Rancid Gas Potion");
+		
+		arsenal.add(healthPotion);
+		arsenal.add(damagePotion);
+	}
+	
+	/**
+	 * 
+	 * @param player The character to make actions based on keyboard input
+	 * @param enemy The character to make actions based on random numbers
+	 */
+	public Game(Adventurer player, Adventurer enemy){
+		this.player = player;
+		this.enemy = enemy;
+		this.keyboard = new Scanner(System.in);
+		this.random = new Random();
+		this.inventoryStatus = 0;
+		this.equipAdventurer();
+	}
+
+	/**
+	 * Initialize the game by give the player equipments.
+	 *  
+	 */						
+	private void equipPlayer(){
+		Weapon initialEquippedWeapon = new Weapon("Truncheon", 100, 1);
+		this.player.equipWeapon(initialEquippedWeapon);		
+
+		Shield computerEquippedShield = (Shield) this.getEquipment("Shield");
+		this.player.equipShield(computerEquippedShield);		
+	}
+
+	/**
+	 * Initialize the game by give the enemy equipments.
+	 *  
+	 */						
+	private void equipComputer(){
+		Weapon computerEquippedWeapon = (Weapon) this.getEquipment("Weapon");
+		this.enemy.equipWeapon(computerEquippedWeapon);
+		
+		Shield computerEquippedShield = (Shield) this.getEquipment("Shield");
+		this.enemy.equipShield(computerEquippedShield);
+		
+		Armour computerEquippedArmour = (Armour) this.getEquipment("Armour");
+		this.enemy.equipArmour(computerEquippedArmour);		
+	}
+
+	/**
+	 * Initialize the game by give the players equipments.
+	 *  
+	 */					
+	private void equipAdventurer(){
+		this.equipPlayer();
+		this.equipComputer();
+	}
+
+	/**
+	 * Select equipments from the Game Arsenal.
+	 *  
+	 */						
+	private Item getEquipment(String equipmentType){
+		ArrayList<Item> selectable = new ArrayList<Item>();
+		for(Item item: arsenal){
+			if(item.getTypename().equals(equipmentType)){
+				selectable.add(item);
+			}
+		}
+		
+		if(selectable.size() > 0){
+			int index = this.random.nextInt(selectable.size());
+			return selectable.get(index);
+		}
+		else{
+			System.err.println("There is no item of type " + equipmentType + " in the Game Arsenal.\n");
+			return null;			
+		}
+	}
+
+	/**
+	 * Prompt the adventurer for actions during the battle.
+	 *  
+	 */					
+	private int showPlayerActions(){
+		System.out.println("1. Attack");
+		System.out.println("2. Block");
+		System.out.println("3. Inventory");
+		System.out.println("4. Run Away");
+		System.out.println("What would you like to do (1-4)?");
+		
+		int choice = keyboard.nextInt();
+		if((choice >= 0) && (choice <=4)){
+			return choice;
+		}
+		else{
+			return this.showPlayerActions();
+		}
+	}
+
+	/**
+	 * Pick up new items for the adventurer.
+	 *  
+	 */				
+	private void pickupItem(){
+		int selection = this.random.nextInt(arsenal.size());
+		Item item = arsenal.get(selection);
+		System.out.println("Item found!");
+		System.out.println(item);
+		System.out.println("Would you like to pick up " + item + "(yes/no):");
+		String answer = this.keyboard.next();
+		if(answer.equals("yes")){
+			boolean status = this.player.addItem(item);
+			if(!status)
+				System.out.println("Couldn't pick up item because inventory is full!");
+		}
+		this.player.showInventory();
+	}
+
+	/**
+	 * The adventurer's awards for winning the game.
+	 *  
+	 */				
+	private void getAwards(){	
+		int totalAwards = 3;
+		System.out.println("Items Found!\n");
+
+		int awardsLeft = totalAwards;
+
+		while(true){
+			System.out.println("Items left: " + awardsLeft);
+			System.out.println("1. Pick up item");
+			System.out.println("2. Drop item");
+			System.out.println("3. Equip item");
+			System.out.println("4. Fight!");
+			System.out.println("What would you like to do (1-4)?");
+			int choice = this.keyboard.nextInt();
+			if((awardsLeft == 0) && (choice == 1)){
+				System.out.println("Couldn't pick up item due to no award left.");
+				continue;
+			}
+			switch(choice){
+				case 1: this.pickupItem(); awardsLeft--; break;
+				case 2: this.inventoryStatus = 2; this.findItems(); break;
+				case 3: this.inventoryStatus = 3; this.findItems(); break;
+				case 4: break;
+			}
+			if(choice == 4)
+				break;
+		}
+		this.battle();
+	}
+
+	/**
+	 * The adventurer loses the game.
+	 * More battle statistics could be displayed here. 
+	 */			
+	public void gameOver(){
+		System.out.println("Game Over!");
+	}
+
+	/**
+	 * The adventurer wins the game and should collect awards.
+	 */		
+	public void winBattle(){
+		System.out.println("Congratulation! You defeated " + this.enemy);
+		this.getAwards();
+	}
+	
+	/**
+	 * Battle will generate an enemy and allow the player to fight them.
+	 * The player will be able to attack, defend and use items.
+	 * Exit the function when either the player or the enemy have been defeated.
+	 */
+	public void battle(){
+		if((this.enemy == null) || (!this.enemy.isAlive())){
+			System.out.println("Generate a new enemy. The name is?");
+			String enemyName = this.keyboard.next();
+			this.enemy = new Adventurer(enemyName, 500);
+			this.equipComputer();
+		}
+		
+		this.firstToMove = this.player;
+		if(this.player.getWeight() > this.enemy.getWeight()){
+			this.firstToMove = this.enemy;
+		}
+		
+		System.out.println(this.firstToMove.name + " moves first.");
+		
+		while(true){
+			if(!this.enemy.isAlive()){
+				this.winBattle();
+				break;
+			}
+			else if(!this.player.isAlive()){
+				this.gameOver();
+				break;
+			}
+			
+			if(this.firstToMove == this.player){
+				this.firstToMove = this.enemy;
+				if(this.player.isStunned()){
+					this.player.recoveredFromStun();
+				}
+				else{
+					int choice = this.showPlayerActions();
+					switch(choice){
+						case 1: this.player.attack(this.enemy); break;
+						case 2: this.player.defend(); break;
+						case 3: this.inventoryStatus = 1; this.findItems(); break;
+					}
+					if(choice == 4){
+						this.gameOver();
+						break;
+					}
+				}
+			}
+			else{
+				this.firstToMove = this.player;
+				if(this.enemy.isStunned()){
+					this.enemy.recoveredFromStun();
+				}
+				else{
+					int attackOrDefend = this.random.nextInt(2) + 1;
+					if(attackOrDefend == 1)
+						this.enemy.attack(this.player);
+					else
+						this.enemy.defend();
+				}
+			}
+			
+			this.player.displayHp();
+			this.enemy.displayHp();			
+		}
+	}
+
+	/**
+	 * Use items for the adventurer.
+	 */		
+	private void useItems(){
+		System.out.println("Current Inventory");
+		this.player.showInventory();
+		int choice = -1;
+		
+		while(true){
+			System.out.println("Which item would you like to use (1-6, or -1 to quit)?");
+			choice = this.keyboard.nextInt();
+			if((choice == -1) || ((choice >= 1) && (choice <= 6)))
+				break;
+			else
+				System.out.println("Invalid choice! Please input again.");
+		}
+		
+		if(choice != -1){
+			System.out.println("1. " + this.player);
+			System.out.println("2. " + this.enemy);
+			System.out.println("Who do you want to use Health Potion on (1-2)?");
+			int target = this.keyboard.nextInt();
+			try {
+				if(target == 1)
+					this.player.use(choice, this.player);
+				else
+					this.player.use(choice, this.enemy);
+			}
+			catch(ItemTypeException ite){
+				System.out.println("Incorrect item type.");
+			}
+		}
+		else
+			this.firstToMove = this.player;
+	}	
+	
+	/**
+	 * Drop or remove items for the adventurer.
+	 */		
+	private void dropItems(){
+		System.out.println("Current Inventory");
+		this.player.showInventory();
+		int choice = -1;
+		
+		while(true){
+			System.out.println("Which item would you like to drop (1-6, or -1 to quit)?");
+			choice = this.keyboard.nextInt();
+			if((choice == -1) || ((choice >= 1) && (choice <= 6)))
+				break;
+			else
+				System.out.println("Invalid choice! Please input again.");
+		}
+		
+		if(choice != -1){
+			Item item = this.player.getItem(choice);
+			System.out.println(item);
+			System.out.println("Are you sure you want to drop " + item + "(yes/no)?");
+			String answer = this.keyboard.next();
+			if(answer.equals("yes")){
+				this.player.removeItem(choice);
+				System.out.println("Item removed");
+			}
+		}		
+	}
+
+	/**
+	 * Equip items for the adventurer.
+	 */	
+	private void equipItems(){
+		System.out.println("Current Inventory");
+		this.player.showInventory();
+		int choice = -1;
+		
+		while(true){
+			System.out.println("Which item would you like to equip (1-6, or -1 to quit)?");
+			choice = this.keyboard.nextInt();
+			if((choice == -1) || ((choice >= 1) && (choice <= 6)))
+				break;
+			else
+				System.out.println("Invalid choice! Please input again.");
+		}
+		
+		if(choice != -1){
+			Item item = this.player.getItem(choice);
+			if(item instanceof Armour){
+				Armour newArmour = (Armour) item;
+				if(this.player.isEquippedArmour()){
+					System.out.println("Current Armour");
+					System.out.println(this.player.getArmour());					
+				}
+				System.out.println("New Armour");
+				System.out.println(newArmour);
+				System.out.println("Are you sure you want to equip " + newArmour +"(yes/no)?");
+				String answer = this.keyboard.next();
+				if(answer.equals("yes")){
+					Armour previousArmour = this.player.equipArmour(newArmour);
+					if(previousArmour != null)
+						this.player.addItem(previousArmour, choice);
+					else
+						this.player.destroyItem(choice);
+				}
+			}
+			else if(item instanceof Shield){
+				Shield newShield = (Shield) item;
+				if(this.player.isEquippedShield()){
+					System.out.println("Current Shield");
+					System.out.println(this.player.getShield());					
+				}
+				System.out.println("New Shield");
+				System.out.println(newShield);
+				System.out.println("Are you sure you want to equip " + newShield +"(yes/no)?");
+				String answer = this.keyboard.next();
+				if(answer.equals("yes")){
+					Shield previousShield = this.player.equipShield(newShield);
+					if(previousShield != null)
+						this.player.addItem(previousShield, choice);
+					else
+						this.player.destroyItem(choice);
+				}				
+			}
+			else if(item instanceof Weapon){
+				Weapon newWeapon = (Weapon) item;
+				if(this.player.isEquippedWeapon()){
+					System.out.println("Current Weapon");
+					System.out.println(this.player.getWeapon());					
+				}
+				System.out.println("New Weapon");
+				System.out.println(newWeapon);
+				System.out.println("Are you sure you want to equip " + newWeapon +"(yes/no)?");
+				String answer = this.keyboard.next();
+				if(answer.equals("yes")){
+					Weapon previousWeapon = this.player.equipWeapon(newWeapon);
+					if(previousWeapon != null)
+						this.player.addItem(previousWeapon, choice);
+					else
+						this.player.destroyItem(choice);
+				}				
+			}
+			this.player.showInventory();
+		}
+	}
+	
+	/**
+	 * In FindItems you will perform some inventory management.
+	 * Allow the character to add, remove and equip items.
+	 */
+	public void findItems(){
+		if(this.inventoryStatus == 1) //Use items
+			this.useItems();
+		else if(this.inventoryStatus == 2) //Drop items
+			this.dropItems();
+		else if(this.inventoryStatus == 3) //Equip items
+			this.equipItems();
+	}
+	
+	/**
+	 * This method is the entry point to the game.
+	 * This method should be responsible for initializing most of the 
+	 * initial items and equipment. The play game method should simply
+	 * call the battle() and findItems() methods.
+	 * Play game should continue to call these methods while the player is alive.
+	 */
+	public void playGame(){
+		System.out.println("Adventure Game Starts!");
+		this.battle();
+	}
+	
+	public static void main(String[] args){
+		String playerName = "Player";
+		String enemyName = "Computer";
+		System.out.println("Welcome to the Adventure Game.");
+		System.out.println("What would you like to call the player?");
+		BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
+		try {
+			playerName = stdin.readLine();
+			System.out.println("And the enemy is?");
+			enemyName = stdin.readLine();
+		} 
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		System.out.println(playerName);
+		System.out.println(enemyName);
+		
+		Adventurer player = new Adventurer(playerName, 1000);
+		Adventurer computer = new Adventurer(enemyName, 500);
+		
+		Game game = new Game(player, computer);
+		System.out.println(game.enemy.getArmour());
+		System.out.println(game.enemy.getShield());
+		System.out.println(game.enemy.getWeapon());
+		game.playGame();
+	}	
+}
+
