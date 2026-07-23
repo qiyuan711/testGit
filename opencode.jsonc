@@ -1,0 +1,28 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "compaction": {
+    "auto": true,
+    "prune": true,
+    "tail_turns": 2
+  },
+  "tool_output": {
+    "max_lines": 400,
+    "max_bytes": 24576
+  },
+  "permission": {
+    "grep": "allow",
+    "glob": "allow",
+    "read": "allow",
+    "bash": {
+      "*": "allow",
+      "find *": "deny",
+      "grep *": "deny",
+      "egrep *": "deny",
+      "fgrep *": "deny",
+      "rg *": "deny",
+      "ag *": "deny",
+      "ack *": "deny",
+      "tree *": "deny"
+    }
+  }
+}
